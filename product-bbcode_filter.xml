@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<product productid="bbcode_filter" active="1">
+	<title>BB Code filter</title>
+	<description />
+	<version>0.2</version>
+	<url />
+	<versioncheckurl />
+	<apm_releasedate>0</apm_releasedate>
+	<apm_author />
+	<apm_relatedurl />
+	<apm_extrainfo />
+	<apm_extraedit />
+	<dependencies>
+	</dependencies>
+	<codes>
+		<code version="0.2">
+			<installcode><![CDATA[
+$db->query_write("ALTER TABLE " . TABLE_PREFIX . "usergroup ADD COLUMN bbcode_filter_on INT UNSIGNED NOT NULL DEFAULT '0'");
+$db->query_write("ALTER TABLE " . TABLE_PREFIX . "usergroup ADD COLUMN aditional_bbcode_filters VARCHAR(255)");
+]]></installcode>
+			<uninstallcode><![CDATA[
+$db->query_write("ALTER TABLE " . TABLE_PREFIX . "usergroup DROP COLUMN bbcode_filter_on");
+$db->query_write("ALTER TABLE " . TABLE_PREFIX . "usergroup DROP COLUMN aditional_bbcode_filters");
+]]></uninstallcode>
+		</code>
+	</codes>
+	<templates>
+	</templates>
+	<plugins>
+		<plugin active="1" executionorder="5">
+			<title>Display BB Code filers settings</title>
+			<hookname>admin_usergroup_edit</hookname>
+			<phpcode><![CDATA[print_table_header($vbphrase['aditional_bbcode_filter']);
+
+print_yes_no_row($vbphrase['bbcode_filter_status_for_this_group'],   'usergroup[bbcode_filter_on]', $usergroup['bbcode_filter_on']);
+
+$aditional_bbcode_filters = unserialize($usergroup['aditional_bbcode_filters']);
+print_yes_no_row($vbphrase['allow_bbcode_color'],   'usergroup[aditional_bbcode_filters]['. ALLOW_BBCODE_COLOR .']', $aditional_bbcode_filters[ALLOW_BBCODE_COLOR]);
+print_yes_no_row($vbphrase['allow_bbcode_size'],    'usergroup[aditional_bbcode_filters]['. ALLOW_BBCODE_SIZE .']', $aditional_bbcode_filters[ALLOW_BBCODE_SIZE]);
+print_yes_no_row($vbphrase['allow_bbcode_font'],    'usergroup[aditional_bbcode_filters]['. ALLOW_BBCODE_FONT .']', $aditional_bbcode_filters[ALLOW_BBCODE_FONT]);
+
+print_table_break();
+print_column_style_code(array('width: 70%', 'width: 30%'));]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Save BB Code filers settings</title>
+			<hookname>admin_usergroup_save</hookname>
+			<phpcode><![CDATA[$vbulletin->GPC['usergroup']['aditional_bbcode_filters'] = serialize($vbulletin->GPC['usergroup']['aditional_bbcode_filters']);]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Filter bbtags</title>
+			<hookname>bbcode_parse_start</hookname>
+			<phpcode><![CDATA[$optiongroup = NULL;
+if (property_exists(get_class($this), 'optiongroup'))
+{
+    $optiongroup = $this->optiongroup;
+}
+
+$text = remove_disabled_bbtags($text, $this->parse_userinfo, $forumid, $optiongroup);
+
+$tags = get_tags_status_list($this->parse_userinfo, $forumid, $optiongroup);
+if ($tags['COLOR'])
+{
+// [COLOR=XXX]
+    $this->tag_list['option']['color'] = array(
+        'html' => '<font color="%2$s">%1$s</font>',
+        'option_regex' => '#^\#?\w+$#',
+        'strip_empty' => true
+    );
+}
+else
+{
+    unset($this->tag_list['option']['color']);
+}
+if ($tags['SIZE'])
+{
+// [SIZE=XXX]
+    $this->tag_list['option']['size'] = array(
+        'html' => '<font size="%2$s">%1$s</font>',
+        'option_regex' => '#^[0-9\+\-]+$#',
+        'strip_empty' => true
+    );
+}
+else
+{
+    unset($this->tag_list['option']['size']);
+}
+
+if ($tags['FONT'])
+{
+// [FONT=XXX]
+    $this->tag_list['option']['font'] = array(
+        'html' => '<font face="%2$s">%1$s</font>',
+        'option_regex' => '#^[^["`\':]+$#',
+        'strip_empty' => true
+    );
+}
+else
+{
+    unset($this->tag_list['option']['font']);
+}
+]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Clear blog post</title>
+			<hookname>blog_fpdata_presave</hookname>
+			<phpcode><![CDATA[
+$pagetext = remove_disabled_bbtags($this->fetch_field('pagetext', 'blog_text'));
+$this->set('pagetext', $pagetext);]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Clear blog comment</title>
+			<hookname>blog_textdata_presave</hookname>
+			<phpcode><![CDATA[
+$pagetext = remove_disabled_bbtags($this->fetch_field('pagetext'));
+$this->set('pagetext', $pagetext);]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Adapt toolbar panel</title>
+			<hookname>editor_toolbar_start</hookname>
+			<phpcode><![CDATA[
+if (intval($forumid) || 'privatemessage' == $forumid)
+{
+    $user_info = $vbulletin->userinfo;
+    $tags_list = get_tags_status_list($user_info, $forumid);
+    $show['font_bbcode'] = $tags_list['FONT'];
+    $show['size_bbcode'] = $tags_list['SIZE'];
+    $show['color_bbcode'] = $tags_list['COLOR'];
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Declare function in global namespace</title>
+			<hookname>global_start</hookname>
+			<phpcode><![CDATA[
+function get_tags_status_list($user_info = NULL, $forumid = NULL, $optiongroup = NULL)
+{
+    global $vbulletin;
+    $allawbbcodes = array(
+        'BASIC',
+        'COLOR',
+        'SIZE',
+        'FONT',
+        'ALIGN',
+        'LIST',
+        'URL',
+        'CODE',
+        'PHP',
+        'HTML',
+        'IMG',
+        //'QUOTE',
+        //'CUSTOM',
+    );
+    // user init
+    if (is_null($user_info) || empty($user_info))
+    {
+        $user_info = $vbulletin->userinfo;
+    }
+    $userid = $user_info['userid'];
+    // optiongroup init
+    if (is_null($optiongroup))
+    {
+        switch (THIS_SCRIPT)
+        {
+            case 'group':
+                $optiongroup = 'sg_allowed_bbcode';
+                break;
+            case 'visitormessage':
+                $optiongroup = 'vm_allowed_bbcode';
+                break;
+            case 'picturecomment':
+                $optiongroup = 'pc_allowed_bbcode';
+                break;
+            default:
+                $optiongroup = 'allowedbbcodes';
+        }
+    }
+    // mod init
+    $filtered_section = NULL;
+    if ('allowedbbcodes' == $optiongroup)
+    {
+        if (is_null($forumid) AND 'private' == THIS_SCRIPT)
+        {
+            $forumid = 'privatemessage';
+        }
+        if (intval($forumid) || 'privatemessage' == $forumid)
+        {
+            $filtered_section = 'enable_bbcode_filter_for_forum';
+        }
+    }
+    else
+    {
+        $filtered_section = 'enable_bbcode_filter_for_' . substr($optiongroup, 0, 2);
+    }
+
+    $permissions = fetch_permissions(0, $userid, $user_info);
+
+    $aditional_bbcode_filters = unserialize($permissions['aditional_bbcode_filters']);
+
+    // get mod settings
+    $is_need_aditional_check = false;
+    if (!is_null($filtered_section) && isset($vbulletin->options[$filtered_section]))
+    {
+        $is_need_aditional_check = $vbulletin->options[$filtered_section] && $permissions['bbcode_filter_on'];
+    }
+
+    // checking tags
+    $tags = array();
+    foreach ($allawbbcodes as $bbtag)
+    {
+        $tag_bit = @constant('ALLOW_BBCODE_' . strtoupper($bbtag));
+        if ($is_need_aditional_check AND is_array($aditional_bbcode_filters)
+                    AND array_key_exists($tag_bit, $aditional_bbcode_filters))
+        {
+            $tags[$bbtag] = $aditional_bbcode_filters[$tag_bit]?$tag_bit:0;
+        }
+        else
+        {
+            $tags[$bbtag] = $vbulletin->options[$optiongroup] & $tag_bit;
+        }
+    }
+    return $tags;
+}
+
+function simple_bbtag_replace($text, $bbtag)
+{
+    $length_before = strlen($text);
+    $text = str_ireplace('['. $bbtag .']', '', $text);
+    if (strlen($text) != $length_before )
+    {
+        $text = str_ireplace('[/'. $bbtag .']', '', $text);
+    }
+    return $text;
+}
+
+function preg_bbtag_replace($text, $bbtag, $pattern  = NULL)
+{
+    if (is_null($pattern))
+    {
+        $pattern = '#(\[' . $bbtag .'(=?.*?)\])#i';
+    }
+    $length_before = strlen($text);
+    $text = preg_replace($pattern, '', $text);
+    if (strlen($text) != $length_before )
+    {
+        $text = str_ireplace('[/'. $bbtag .']', '', $text);
+    }
+    return $text;
+}
+
+function remove_disabled_bbtags($text, $user_info = NULL, $forumid = NULL, $optiongroup = NULL)
+{
+    $tag_delete_rules = array(
+        'BASIC' => array(
+            'clear_type'=>'simple',
+            'tags'=>array('B', 'I', 'U'),
+        ),
+        'COLOR' => array(
+            'clear_type'=>'preg',
+        ),
+        'SIZE' => array(
+            'clear_type'=>'preg',
+        ),
+        'FONT' => array(
+            'clear_type'=>'preg',
+        ),
+        'ALIGN' => array(
+            'clear_type'=>'simple',
+            'tags'=>array('LEFT', 'CENTER', 'RIGHT')
+        ),
+            'LIST' => array(
+            'clear_type'=>'preg',
+        ),
+        'URL' => array(
+            'clear_type'=>'preg',
+        ),
+        'CODE' => array(
+            'clear_type'=>'simple',
+        ),
+        'PHP' => array(
+            'clear_type'=>'simple',
+        ),
+        'HTML' => array(
+            'clear_type'=>'simple',
+        ),
+        'IMG' => array(
+            'clear_type'=>'simple',
+        ),
+        //'QUOTE',
+        //'CUSTOM',
+
+    );
+    $tags = get_tags_status_list($user_info, $forumid, $optiongroup);
+
+    foreach ($tags as $tag_group=>$is_tag_enable)
+    {
+
+        if (!$is_tag_enable)
+        {
+            $tag_group_info = $tag_delete_rules[$tag_group];
+            if (is_array($tag_group_info))
+            {
+                if (!array_key_exists('tags' , $tag_group_info))
+                {
+                    $tag_group_info['tags'] = array($tag_group);
+                }
+
+                foreach ($tag_group_info['tags'] as $bbtag)
+                {
+                    switch ($tag_group_info['clear_type'])
+                    {
+                        case 'preg':
+                            $text = preg_bbtag_replace($text, $bbtag, $tag_group_info['pattern']);
+                            break;
+                        case 'simple':
+                        default:
+                            $text = simple_bbtag_replace($text, $bbtag);
+                    }
+                }
+            }
+        }
+    }
+    /**
+     * tag INDENT can be allow for to bbcode options ALIGN and LIST
+     * remove only if both group are desabled
+     */
+    if (!($tags['ALIGN'] || $tags['LIST']))
+    {
+        $text = preg_bbtag_replace($text, 'INDENT', $tag_group_info['pattern']);
+    }
+    return $text;
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Clear PM</title>
+			<hookname>pmdata_presave</hookname>
+			<phpcode><![CDATA[$message = remove_disabled_bbtags($this->fetch_field('message'), NULL, 'privatemessage');
+$this->set('message', $message);]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Clear post</title>
+			<hookname>postdata_presave</hookname>
+			<phpcode><![CDATA[$pagetext = remove_disabled_bbtags($this->fetch_field('pagetext'), NULL, $this->info['forum']['forumid']);
+$this->set('pagetext', $pagetext);]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Add userinfo into parser, for correct work</title>
+			<hookname>showthread_postbit_create</hookname>
+			<phpcode><![CDATA[$userinfo = fetch_userinfo($post['userid']);
+$postbit_factory->bbcode_parser->set_parse_userinfo($userinfo);]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Clear reply</title>
+			<hookname>threadfpdata_presave</hookname>
+			<phpcode><![CDATA[$pagetext = remove_disabled_bbtags($this->fetch_field('pagetext', 'post'), NULL, $this->fetch_field('forumid'));
+$this->set('pagetext', $pagetext);]]></phpcode>
+		</plugin>
+	</plugins>
+	<phrases>
+		<phrasetype name="Control Panel User Groups" fieldname="cpusergroup">
+			<phrase name="aditional_bbcode_filter" date="0" username="" version=""><![CDATA[BBCode filter settings]]></phrase>
+			<phrase name="bbcode_filter_status_for_this_group" date="1256561685" username="varnak" version="0.2"><![CDATA[Is BB Code filter enable for this group?]]></phrase>
+		</phrasetype>
+		<phrasetype name="vBulletin Settings" fieldname="vbsettings">
+			<phrase name="setting_enable_bbcode_filter_for_forum_desc" date="1256545518" username="varnak" version="0.2"><![CDATA[Enable BB Code filter for forum and private message?]]></phrase>
+			<phrase name="setting_enable_bbcode_filter_for_forum_title" date="1256545518" username="varnak" version="0.2"><![CDATA[Enable BB Code filter for forum]]></phrase>
+			<phrase name="setting_enable_bbcode_filter_for_pc_desc" date="1256545615" username="varnak" version="0.2"><![CDATA[Enable BB Code filter for picture comments?]]></phrase>
+			<phrase name="setting_enable_bbcode_filter_for_pc_title" date="1256545615" username="varnak" version="0.2"><![CDATA[Enable BB Code filter for picture comments]]></phrase>
+			<phrase name="setting_enable_bbcode_filter_for_sg_desc" date="1256545626" username="varnak" version="0.2"><![CDATA[Enable BB Code filter for social groups?]]></phrase>
+			<phrase name="setting_enable_bbcode_filter_for_sg_title" date="1256545626" username="varnak" version="0.2"><![CDATA[Enable BB Code filter for social groups]]></phrase>
+			<phrase name="setting_enable_bbcode_filter_for_vm_desc" date="1256545672" username="varnak" version="0.2"><![CDATA[Enable BB Code filter for visitor messages?]]></phrase>
+			<phrase name="setting_enable_bbcode_filter_for_vm_title" date="1256545672" username="varnak" version="0.2"><![CDATA[Enable BB Code filter for visitor messages]]></phrase>
+			<phrase name="settinggroup_bbcode_filter" date="1256544849" username="varnak" version="0.2"><![CDATA[BB Code filter settings]]></phrase>
+		</phrasetype>
+	</phrases>
+	<options>
+		<settinggroup name="bbcode_filter" displayorder="65535">
+			<setting varname="enable_bbcode_filter_for_forum" displayorder="10">
+				<datatype>boolean</datatype>
+				<optioncode>yesno</optioncode>
+				<defaultvalue>1</defaultvalue>
+			</setting>
+			<setting varname="enable_bbcode_filter_for_sg" displayorder="20">
+				<datatype>boolean</datatype>
+				<optioncode>yesno</optioncode>
+				<defaultvalue>0</defaultvalue>
+			</setting>
+			<setting varname="enable_bbcode_filter_for_pc" displayorder="30">
+				<datatype>boolean</datatype>
+				<optioncode>yesno</optioncode>
+				<defaultvalue>0</defaultvalue>
+			</setting>
+			<setting varname="enable_bbcode_filter_for_vm" displayorder="40">
+				<datatype>boolean</datatype>
+				<optioncode>yesno</optioncode>
+				<defaultvalue>0</defaultvalue>
+			</setting>
+		</settinggroup>
+	</options>
+	<helptopics>
+	</helptopics>
+	<cronentries>
+	</cronentries>
+	<faqentries>
+	</faqentries>
+	<templateedits>
+	</templateedits>
+</product>
