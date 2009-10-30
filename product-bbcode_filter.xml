@@ -6,11 +6,6 @@
 	<version>0.2</version>
 	<url />
 	<versioncheckurl />
-	<apm_releasedate>0</apm_releasedate>
-	<apm_author />
-	<apm_relatedurl />
-	<apm_extrainfo />
-	<apm_extraedit />
 	<dependencies>
 	</dependencies>
 	<codes>
@@ -132,8 +127,7 @@ if (intval($forumid) || 'privatemessage' == $forumid)
 		<plugin active="1" executionorder="5">
 			<title>Declare function in global namespace</title>
 			<hookname>global_start</hookname>
-			<phpcode><![CDATA[
-function get_tags_status_list($user_info = NULL, $forumid = NULL, $optiongroup = NULL)
+			<phpcode><![CDATA[function get_tags_status_list($user_info = NULL, $forumid = NULL, $optiongroup = NULL)
 {
     global $vbulletin;
     $allawbbcodes = array(
@@ -147,7 +141,7 @@ function get_tags_status_list($user_info = NULL, $forumid = NULL, $optiongroup =
         'CODE',
         'PHP',
         'HTML',
-        'IMG',
+        //'IMG', processing algorithm of this tag is different from the main
         //'QUOTE',
         //'CUSTOM',
     );
@@ -283,9 +277,7 @@ function remove_disabled_bbtags($text, $user_info = NULL, $forumid = NULL, $opti
         'HTML' => array(
             'clear_type'=>'simple',
         ),
-        'IMG' => array(
-            'clear_type'=>'simple',
-        ),
+        //'IMG', processing algorithm of this tag is different from the main
         //'QUOTE',
         //'CUSTOM',
 
@@ -330,6 +322,12 @@ function remove_disabled_bbtags($text, $user_info = NULL, $forumid = NULL, $opti
     }
     return $text;
 }]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Clear SG discussion</title>
+			<hookname>groupmessagedata_presave</hookname>
+			<phpcode><![CDATA[$pagetext = remove_disabled_bbtags($this->fetch_field('pagetext'));
+$this->set('pagetext', $pagetext);]]></phpcode>
 		</plugin>
 		<plugin active="1" executionorder="5">
 			<title>Clear PM</title>
