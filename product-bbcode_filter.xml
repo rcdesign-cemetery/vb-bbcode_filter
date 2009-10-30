@@ -6,6 +6,11 @@
 	<version>0.2</version>
 	<url />
 	<versioncheckurl />
+	<apm_releasedate>0</apm_releasedate>
+	<apm_author />
+	<apm_relatedurl />
+	<apm_extrainfo />
+	<apm_extraedit />
 	<dependencies>
 	</dependencies>
 	<codes>
@@ -141,7 +146,13 @@ if (intval($forumid) || 'privatemessage' == $forumid)
         'CODE',
         'PHP',
         'HTML',
-        //'IMG', processing algorithm of this tag is different from the main
+
+        // IMG tag permissions are crazy. It's better to leave intact.
+        // Usually, no needs to disable it at all. Less work - less problems :)
+        //'IMG'
+
+        // Skip qustom and quote tags, to simplify processing.
+        // Usually, no needs to disable those at all.
         //'QUOTE',
         //'CUSTOM',
     );
@@ -277,7 +288,13 @@ function remove_disabled_bbtags($text, $user_info = NULL, $forumid = NULL, $opti
         'HTML' => array(
             'clear_type'=>'simple',
         ),
-        //'IMG', processing algorithm of this tag is different from the main
+ 
+        // IMG tag permissions are crazy. It's better to leave intact.
+        // Usually, no needs to disable it at all. Less work - less problems :)
+        //'IMG',
+
+        // Skip qustom and quote tags, to simplify processing.
+        // Usually, no needs to disable those at all.
         //'QUOTE',
         //'CUSTOM',
 
