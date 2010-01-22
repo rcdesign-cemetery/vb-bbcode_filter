@@ -2,10 +2,15 @@
 
 <product productid="bbcode_filter" active="1">
 	<title>BB Code filter</title>
-	<description />
+	<description>Group-based bbcode permissions</description>
 	<version>0.2</version>
-	<url />
-	<versioncheckurl />
+	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=bbcode_filter]]></url>
+	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=bbcode_filter]]></versioncheckurl>
+	<apm_releasedate>0</apm_releasedate>
+	<apm_author />
+	<apm_relatedurl />
+	<apm_extrainfo />
+	<apm_extraedit />
 	<dependencies>
 	</dependencies>
 	<codes>
@@ -458,7 +463,7 @@ if (!is_null($pagetext))
 	<phrases>
 		<phrasetype name="Control Panel User Groups" fieldname="cpusergroup">
 			<phrase name="aditional_bbcode_filter" date="0" username="" version=""><![CDATA[BBCode filter settings]]></phrase>
-			<phrase name="bbcode_filter_status_for_this_group" date="1256561685" username="varnak" version="0.2"><![CDATA[Is BB Code filter enable for this group?]]></phrase>
+			<phrase name="bbcode_filter_status_for_this_group" date="1264168406" username="Vitaly" version=""><![CDATA[Is BB Code filter enabled for this group?]]></phrase>
 		</phrasetype>
 		<phrasetype name="vBulletin Settings" fieldname="vbsettings">
 			<phrase name="setting_enable_bbcode_filter_for_forum_desc" date="1256545518" username="varnak" version="0.2"><![CDATA[Enable BB Code filter for forum and private message?]]></phrase>

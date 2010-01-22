@@ -11,3 +11,6 @@ from Rich Text editor (MS Office, Open Office) to forum WISYWIG.
 3. Allow override permissions for some tags on group basis: FONT, SIZE, COLOR
 
 4. Have global setting, where to apply custom permissions
+
+Released at vborg
+http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=bbcode_filter
