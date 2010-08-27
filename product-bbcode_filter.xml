@@ -58,14 +58,17 @@ print_column_style_code(array('width: 70%', 'width: 30%'));]]></phpcode>
 			<phpcode><![CDATA[require_once(DIR . '/includes/functions_bbcode_filter.php');
             
 $optiongroup = NULL;
+
 if (property_exists(get_class($this), 'optiongroup'))
 {
     $optiongroup = $this->optiongroup;
 }
 
-$text = remove_disabled_bbtags($text, $this->parse_userinfo, $forumid, $optiongroup);
+//PM output rendering filter is disabled to solve mod confilcts
+$text = remove_disabled_bbtags($text, $this->parse_userinfo, $forumid, $optiongroup, false);
 
-$tags = get_tags_status_list($this->parse_userinfo, $forumid, $optiongroup);
+$tags = get_tags_status_list($this->parse_userinfo, $forumid, $optiongroup, false);
+
 if ($tags['COLOR'])
 {
 // [COLOR=XXX]
@@ -105,8 +108,7 @@ if ($tags['FONT'])
 else
 {
     unset($this->tag_list['option']['font']);
-}
-]]></phpcode>
+}]]></phpcode>
 		</plugin>
 		<plugin active="1" executionorder="5">
 			<title>Clear blog post</title>
@@ -257,4 +259,6 @@ if (!is_null($pagetext))
 	</cronentries>
 	<faqentries>
 	</faqentries>
+	<templateedits>
+	</templateedits>
 </product>

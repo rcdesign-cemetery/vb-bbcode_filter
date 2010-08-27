@@ -6,20 +6,28 @@
  * @param array $permissions
  * @param mixed $forumid
  * @param string $optiongroup
+ * @param bool $is_filter_type_inbound - Indicates whether the filtering is for presaving or for output rendering.
  * @return bool
  */
-function is_need_aditional_bbtags_verification($permissions, $forumid = NULL, $optiongroup = 'allowedbbcodes')
+function is_need_aditional_bbtags_verification($permissions, $forumid = NULL, $optiongroup = 'allowedbbcodes', $is_filter_type_inbound = true)
 {
     global $vbulletin;
 
-    // form the name of the option, responsible for enable additional filters
+    // form the name of the option, responsible for enabling additional filters
     $filtered_section = NULL;
     if ('allowedbbcodes' == $optiongroup)
     {
         if (is_null($forumid) AND 'private' == THIS_SCRIPT)
         {
+            // Cancel filtering private messages for output rendering
+            // That conflicted with other mods. Output filter makes sense only for old forum posts
+            if (!$is_filter_type_inbound)
+            {
+                return false;
+            }
             $forumid = 'privatemessage';
         }
+        
         if (intval($forumid) || 'privatemessage' == $forumid)
         {
             $filtered_section = 'enable_bbcode_filter_for_forum';
@@ -37,7 +45,7 @@ function is_need_aditional_bbtags_verification($permissions, $forumid = NULL, $o
     if (!is_null($filtered_section) AND isset($vbulletin->options[$filtered_section])
         AND is_array($aditional_bbcode_filters))
     {
-        $is_need_aditional_check = ($vbulletin->options[$filtered_section] AND $permissions['bbcode_filter_on']);
+            $is_need_aditional_check = ($vbulletin->options[$filtered_section] AND $permissions['bbcode_filter_on']); 
     }
     return $is_need_aditional_check;
 }
@@ -50,9 +58,11 @@ function is_need_aditional_bbtags_verification($permissions, $forumid = NULL, $o
  * @param array $user_info
  * @param mixed $forumid
  * @param string $optiongroup
+ * @param bool $is_filter_type_inbound - Indicates whether the filtering is for presaving or for output rendering.
  * @return array
+ * 
  */
-function get_tags_status_list($user_info = NULL, $forumid = NULL, $optiongroup = NULL)
+function get_tags_status_list($user_info = NULL, $forumid = NULL, $optiongroup = NULL, $is_filter_type_inbound = true)
 {
     global $vbulletin;
     $allawbbcodes = array(
@@ -104,7 +114,7 @@ function get_tags_status_list($user_info = NULL, $forumid = NULL, $optiongroup =
 
     $permissions = fetch_permissions(0, $userid, $user_info);
     $aditional_bbcode_filters = unserialize($permissions['aditional_bbcode_filters']);
-    $is_need_aditional_verification = is_need_aditional_bbtags_verification($permissions, $forumid, $optiongroup);
+    $is_need_aditional_verification = is_need_aditional_bbtags_verification($permissions, $forumid, $optiongroup, $is_filter_type_inbound);
     // checking tags
     $tags = array();
     foreach ($allawbbcodes as $bbtag)
@@ -170,9 +180,10 @@ function preg_bbtag_replace($text, $bbtag, $pattern  = NULL)
  * @param array $user_info
  * @param mixed $forumid
  * @param string $optiongroup
+ * @param bool $is_filter_type_inbound - Indicates whether the filtering is for presaving or for output rendering.
  * @return string
  */
-function remove_disabled_bbtags($text, $user_info = NULL, $forumid = NULL, $optiongroup = NULL)
+function remove_disabled_bbtags($text, $user_info = NULL, $forumid = NULL, $optiongroup = NULL, $is_filter_type_inbound = true)
 {
     $tag_delete_rules = array(
         'BASIC' => array(
@@ -218,7 +229,7 @@ function remove_disabled_bbtags($text, $user_info = NULL, $forumid = NULL, $opti
         //'CUSTOM',
 
     );
-    $tags = get_tags_status_list($user_info, $forumid, $optiongroup);
+    $tags = get_tags_status_list($user_info, $forumid, $optiongroup, $is_filter_type_inbound);
 
     foreach ($tags as $tag_group=>$is_tag_enable)
     {
