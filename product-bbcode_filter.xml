@@ -3,7 +3,7 @@
 <product productid="bbcode_filter" active="1">
 	<title>BB Code filter</title>
 	<description>Group-based bbcode permissions</description>
-	<version>0.3</version>
+	<version>0.4</version>
 	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=bbcode_filter]]></url>
 	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=bbcode_filter]]></versioncheckurl>
 	<apm_releasedate>0</apm_releasedate>
@@ -197,7 +197,16 @@ if (!is_null($pagetext))
 		<plugin active="1" executionorder="5">
 			<title>Add userinfo into parser, for correct work</title>
 			<hookname>showthread_postbit_create</hookname>
-			<phpcode><![CDATA[$userinfo = fetch_userinfo($post['userid']);
+			<phpcode><![CDATA[$userinfo['userid'] = $post['userid'];
+if ($post['userid'] > 0)
+{
+    $userinfo['usergroupid'] = $post['usergroupid'];
+    $userinfo['membergroupids'] = $post['membergroupids'];
+}
+else
+{
+    $userinfo['usergroupid'] = 1;
+}
 $postbit_factory->bbcode_parser->set_parse_userinfo($userinfo);]]></phpcode>
 		</plugin>
 		<plugin active="1" executionorder="5">
